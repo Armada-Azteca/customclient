@@ -11,7 +11,7 @@ Panel
     anchors.top: parent.top
     anchors.left: parent.left
     anchors.right: parent.right
-    text: Looting
+    text: Looting Manual
 
   ComboBox
     id: config
