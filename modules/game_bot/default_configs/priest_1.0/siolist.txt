@@ -1,0 +1,189 @@
+function friendHealer(parent)
+  local panelName = "advancedFriendHealer"
+  local ui = setupUI([[
+Panel
+  height: 145
+  margin-top: 2
+
+  BotSwitch
+    id: title
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    text-align: center
+    text: Friend Healer
+
+  BotTextEdit
+    id: spellName
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: title.bottom
+    margin-top: 3
+
+  Button
+    id: editList
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    text-align: center
+    text: Edit List
+    margin-top: 3
+
+  SmallBotSwitch
+    id: partyAndGuildMembers
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    text-align: center
+    text: Heal Party/Guild
+    margin-top: 3
+
+  BotLabel
+    id: manaInfo
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: partyAndGuildMembers.bottom
+    text-align: center
+
+  HorizontalScrollBar
+    id: minMana
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: manaInfo.bottom
+    margin-top: 2
+    minimum: 1
+    maximum: 100
+    step: 1
+
+  BotLabel
+    id: friendHp
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    text-align: center
+
+  HorizontalScrollBar
+    id: minFriendHp
+    anchors.left: parent.left
+    anchors.right: parent.horizontalCenter
+    anchors.top: friendHp.bottom
+    margin-right: 2
+    margin-top: 2
+    minimum: 1
+    maximum: 100
+    step: 1
+    
+  HorizontalScrollBar
+    id: maxFriendHp
+    anchors.left: parent.horizontalCenter
+    anchors.right: parent.right
+    anchors.top: prev.top
+    margin-left: 2
+    minimum: 1
+    maximum: 100
+    step: 1    
+  ]], parent)
+  ui:setId(panelName)
+
+  if not storage[panelName] then
+    storage[panelName] = {
+      minMana = 60,
+      minFriendHp = 40,
+      maxFriendHp = 90,
+      spellName = "exura sio",
+      sioList = {},
+      partyAndGuildMembers = true
+    }
+  end
+
+
+  rootWidget = g_ui.getRootWidget()
+  sioListWindow = g_ui.createWidget('SioListWindow', rootWidget)
+  sioListWindow:hide()
+
+  if storage[panelName].sioList and #storage[panelName].sioList > 0 then
+    for _, sioName in ipairs(storage[panelName].sioList) do
+      local label = g_ui.createWidget("SioFriendName", sioListWindow.SioList)
+      label.remove.onClick = function(widget)
+        table.removevalue(storage[panelName].sioList, label:getText())
+        label:destroy()
+      end
+      label:setText(sioName)
+    end
+  end
+
+  sioListWindow.AddFriend.onClick = function(widget)
+    local friendName = sioListWindow.FriendName:getText()
+    if friendName:len() > 0 and not table.contains(storage[panelName].sioList, friendName, true) then
+      table.insert(storage[panelName].sioList, friendName)
+      local label = g_ui.createWidget("SioFriendName", sioListWindow.SioList)
+      label.remove.onClick = function(widget)
+        table.removevalue(storage[panelName].sioList, label:getText())
+        label:destroy()
+      end
+      label:setText(friendName)
+      sioListWindow.FriendName:setText('')
+    end
+  end
+
+  ui.title:setOn(storage[panelName].enabled)
+  ui.partyAndGuildMembers:setOn(storage[panelName].partyAndGuildMembers)
+
+  ui.title.onClick = function(widget)
+    storage[panelName].enabled = not storage[panelName].enabled
+    widget:setOn(storage[panelName].enabled)
+  end
+
+  ui.partyAndGuildMembers.onClick = function(widget)
+    storage[panelName].partyAndGuildMembers = not storage[panelName].partyAndGuildMembers
+    widget:setOn(storage[panelName].partyAndGuildMembers)
+  end
+  ui.editList.onClick = function(widget)
+    sioListWindow:show()
+    sioListWindow:raise()
+    sioListWindow:focus()
+  end
+  ui.spellName.onTextChange = function(widget, text)
+    storage[panelName].spellName = text
+  end
+  local updateMinManaText = function()
+    ui.manaInfo:setText("Minimum Mana >= " .. storage[panelName].minMana)
+  end
+  local updateFriendHpText = function()
+    ui.friendHp:setText("" .. storage[panelName].minFriendHp .. "% <= hp >= " .. storage[panelName].maxFriendHp .. "%")  
+  end
+
+  ui.minMana.onValueChange = function(scroll, value)
+    storage[panelName].minMana = value
+    updateMinManaText()
+  end
+  ui.minFriendHp.onValueChange = function(scroll, value)
+    storage[panelName].minFriendHp = value
+
+    updateFriendHpText()
+  end
+  ui.maxFriendHp.onValueChange = function(scroll, value)
+    storage[panelName].maxFriendHp = value
+    updateFriendHpText()
+  end
+  ui.spellName:setText(storage[panelName].spellName)
+  ui.minMana:setValue(storage[panelName].minMana)
+  ui.minFriendHp:setValue(storage[panelName].minFriendHp)
+  ui.maxFriendHp:setValue(storage[panelName].maxFriendHp)
+
+  macro(200, function()
+    if storage[panelName].enabled and storage[panelName].spellName:len() > 0 and manapercent() > storage[panelName].minMana then
+      for _, spec in ipairs(getSpectators()) do
+        if spec:isPlayer() and storage[panelName].minFriendHp >= spec:getHealthPercent() and spec:getHealthPercent() <= storage[panelName].maxFriendHp then
+          if storage[panelName].partyAndGuildMembers and (spec:getShield() >= 3 or spec:getEmblem() == 1) then
+              saySpell(storage[panelName].spellName .. ' "' .. spec:getName(), 100)
+          end
+          if table.contains(storage[panelName].sioList, spec:getName()) then
+            saySpell(storage[panelName].spellName .. ' "' .. spec:getName(), 100)
+          end
+        end
+      end
+    end
+  end)
+end
+friendHealer(batTab)

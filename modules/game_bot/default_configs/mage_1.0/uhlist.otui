@@ -1,0 +1,55 @@
+UHFriendName < Label
+  background-color: alpha
+  text-offset: 2 0
+  focusable: true
+  height: 16
+
+  $focus:
+    background-color: #00000055
+
+  Button
+    id: remove
+    !text: tr('x')
+    anchors.right: parent.right
+    margin-right: 15
+    width: 15
+    height: 15
+
+UHListWindow < MainWindow
+  !text: tr('UH List')
+  size: 200 300
+  @onEscape: self:hide()
+
+  TextList
+    id: UHList
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-bottom: 5
+    padding: 1
+    width: 150
+    height: 200
+    vertical-scrollbar: UHListScrollBar
+
+  VerticalScrollBar
+    id: UHListScrollBar
+    anchors.top: UHList.top
+    anchors.bottom: UHList.bottom
+    anchors.right: UHList.right
+    step: 14
+    pixels-scroll: true
+
+  TextEdit
+    id: UHFriendName
+    anchors.right: parent.right
+    anchors.left: parent.left
+    anchors.top: UHList.bottom
+    margin-top: 5
+
+  Button
+    id: UHAddFriend
+    !text: tr('Add Friend')
+    anchors.right: parent.right
+    anchors.left: parent.left
+    anchors.top: prev.bottom
+    margin-top: 3
