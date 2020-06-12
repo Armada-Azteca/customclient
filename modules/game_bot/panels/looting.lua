@@ -307,9 +307,6 @@ Panel
   refreshConfig()
 
   context.onContainerOpen(function(container, prevContainer)
-    if context.storage.attacking.enabled then
-      return
-    end
     if prevContainer then
       container.autoLooting = prevContainer.autoLooting
     else
