@@ -48,7 +48,7 @@ SingleScrollItemPanel < Panel
   BotItem
     id: item
     anchors.left: parent.left
-    anchors.top: prev.bottom
+    anchors.top: parent.top
     margin-top: 3
 
   SmallBotSwitch
